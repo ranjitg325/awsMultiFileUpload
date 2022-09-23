@@ -31,3 +31,5 @@ exports.s3Uploadv3 = async (files) => {
     params.map((param) => s3client.send(new PutObjectCommand(param)))
   );
 };
+
+

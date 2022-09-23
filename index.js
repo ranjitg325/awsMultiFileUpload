@@ -5,46 +5,11 @@ const { s3Uploadv2, s3Uploadv3 } = require("./s3Service");
 const uuid = require("uuid").v4;
 const app = express();
 
-//single file upload
-// const upload = multer({ dest: "uploads/" });
-// app.post("/upload", upload.single("file"), (req, res) => {
-//   res.json({ status: "success" });
-// });
-
-// multiple file uploads
-// const upload = multer({ dest: "uploads/" });
-// app.post("/upload", upload.array("file", 2), (req, res) => {
-//   res.json({ status: "success" });
-// });
-
-// multiple fields upload
-// const upload = multer({ dest: "uploads/" });
-
-// const multiUpload = upload.fields([
-//   { name: "avatar", maxCount: 1 },
-//   { name: "resume", maxCount: 1 },
-// ]);
-// app.post("/upload", multiUpload, (req, res) => {
-//   console.log(req.files);
-//   res.json({ status: "success" });
-// });
-
-// custom filename
-
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, "uploads");
-//   },
-//   filename: (req, file, cb) => {
-//     const { originalname } = file;
-//     cb(null, `${uuid()}-${originalname}`);
-//   },
-// });
 
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.split("/")[0] === "image") {
+  if (file.mimetype.split("/")[0] === "image" || "video") {
     cb(null, true);
   } else {
     cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE"), false);
@@ -56,28 +21,27 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 1000000000, files: 2 },
+  limits: { fileSize: 1000000000, files: 20 }, //limit of uploading file is 20 for now at once , if wanna increase just change the number 20 to what you want.
 });
-// app.post("/upload", upload.array("file"), async (req, res) => {
-//   try {
-//     const results = await s3Uploadv2(req.files);
-//     console.log(results);
-//     return res.json({ status: "success" });
-//   } catch (err) {
-//     console.log(err);
-//   }
-// });
+
 
 app.post("/upload", upload.array("file"), async (req, res) => {
   try {
     const results = await s3Uploadv3(req.files);
     console.log(results);
-    return res.json({ status: "success" });
+    return res.json({ status: "success", data :  results });
   } catch (err) {
     console.log(err);
   }
 });
-
+// let files = req.files
+// if (files && files.length > 0) {
+//     let URL = await uploadFile(files[0])
+//     res.status(201).send({ status : true, msg: " file uploaded succesfully", data: URL })
+// }
+// else {
+//     res.status(400).send({ msg: "No file found" })
+// }
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
     if (error.code === "LIMIT_FILE_SIZE") {
@@ -94,10 +58,10 @@ app.use((error, req, res, next) => {
 
     if (error.code === "LIMIT_UNEXPECTED_FILE") {
       return res.status(400).json({
-        message: "File must be an image",
+        message: "File must be an image or video",
       });
     }
   }
 });
 
-app.listen(4000, () => console.log("listening on port 4000"));
+app.listen(3000, () => console.log("listening on port 3000"));
